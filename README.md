@@ -23,7 +23,6 @@ A MERN stack platform connecting users with lawyers through:
 
 
 
-
 ## Tech Stack Selection
 
 ### Frontend
