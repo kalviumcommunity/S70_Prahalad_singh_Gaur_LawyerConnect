@@ -96,4 +96,36 @@ router.post('/login', async (req, res) => {
   }
 });
 
+router.get('/google', passport.authenticate('google', { 
+  scope: ['profile', 'email'], 
+  prompt: 'select_account' 
+}));
+
+router.get('/google/callback', (req, res, next) => {
+  passport.authenticate('google', { 
+    session: false 
+  }, (err, authEntity, info) => { // authEntity can be User or Lawyer
+    if (err) {
+      console.error("Google auth callback error:", err);
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed&message=${encodeURIComponent(err.message || 'An unknown error occurred')}`);
+    }
+    if (!authEntity) {
+      const message = info && info.message ? info.message : 'Google authentication failed. Email might not be registered.';
+      return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=google_auth_failed&message=${encodeURIComponent(message)}`);
+    }
+
+    const token = generateToken(authEntity._id, authEntity.role);
+    
+    const queryParams = new URLSearchParams({
+        token,
+        id: authEntity._id,
+        name: authEntity.fullName || authEntity.name, // Use appropriate name field
+        email: authEntity.email,
+        role: authEntity.role
+    }).toString();
+
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/auth/google/success?${queryParams}`);
+  })(req, res, next);
+});
+
 export default router;
